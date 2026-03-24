@@ -413,6 +413,20 @@ public class Planetiler {
       }));
   }
 
+  public Planetiler addGeoPackageGlobSource(String projection, String name, Path basePath, String globPattern) {
+    return addGeoPackageGlobSource(projection, name, basePath, globPattern, null);
+  }
+
+  public Planetiler addGeoPackageGlobSource(String projection, String name, Path basePath, String globPattern, String defaultUrl) {
+    Path dirPath = getPath(name, "geopackage glob", basePath, defaultUrl);
+    boolean keepUnzipped = getKeepUnzipped(name);
+    return addStage(name, "Process all files matching " + dirPath + "/" + globPattern,
+      ifSourceUsed(name, () -> {
+        List<Path> sourcePaths = FileUtils.walkPathWithPattern(basePath, globPattern, zipPath -> FileUtils.walkPathWithPattern(zipPath, "*.gpkg"));
+        GeoPackageReader.process(projection, name, sourcePaths, keepUnzipped ? dirPath.resolveSibling(dirPath.getFileName() + "-unzipped") : tmpDir, featureGroup, config, profile, stats, keepUnzipped);
+      }));
+  }
+
   /**
    * Adds a new OGC GeoPackage source that will be processed when {@link #run()} is called.
    * <p>
